@@ -1,73 +1,56 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import "./Dashboard.css"; // ✅ Import styles
+import "./Dashboard.css";
 
 function Dashboard() {
   const [user, setUser] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [depositAmount, setDepositAmount] = useState("");
-  const [transactionAmount, setTransactionAmount] = useState("");
-  const [editMode, setEditMode] = useState(false);
-  const [editedUser, setEditedUser] = useState({ name: "", email: "" });
-
+  const [withdrawAmount, setWithdrawAmount] = useState("");
   const token = localStorage.getItem("token");
 
-  // ✅ Fetch user
-  const fetchUser = async () => {
-    try {
-      if (!token) {
-        console.error("❌ No token found in localStorage");
-        return;
-      }
-
-      const res = await axios.get("http://localhost:5000/api/auth/me", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      setUser(res.data); // ✅ Store logged-in user data
-    } catch (error) {
-      console.error("❌ USER FETCH ERROR:", error.response?.data || error.message);
-    }
-  };
-
-  // ✅ Fetch transactions
-  const fetchTransactions = async (userId) => {
-    try {
-      if (!userId) return;
-      const res = await axios.get(
-        `http://localhost:5000/api/transactions/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setTransactions(res.data);
-    } catch (err) {
-      console.error("TRANSACTIONS FETCH ERROR:", err);
-    }
-  };
-
   useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data);
+        fetchTransactions(res.data._id);
+      } catch (err) {
+        console.error("USER FETCH ERROR:", err.response?.data || err.message);
+      }
+    };
+
+    const fetchTransactions = async (userId) => {
+      try {
+        const res = await axios.get(
+          `http://localhost:5000/api/transactions/${userId}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setTransactions(res.data);
+      } catch (err) {
+        console.error("TXN FETCH ERROR:", err.response?.data || err.message);
+      }
+    };
+
     fetchUser();
   }, [token]);
 
-  useEffect(() => {
-    if (user?._id) {
-      fetchTransactions(user._id);
-    }
-  }, [user]);
-
   // ✅ Deposit
   const handleDeposit = async () => {
-    if (!depositAmount || isNaN(depositAmount)) return alert("Enter a valid amount");
+    if (!depositAmount || isNaN(depositAmount))
+      return alert("Enter a valid amount");
     try {
       const res = await axios.post(
         "http://localhost:5000/api/transactions/deposit",
         { userId: user._id, amount: Number(depositAmount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       alert(res.data.msg);
-      fetchUser();
-      fetchTransactions(user._id);
+      setUser({ ...user, balance: res.data.balance });
+      setTransactions([res.data.transaction, ...transactions]);
       setDepositAmount("");
     } catch (err) {
       console.error("DEPOSIT ERROR:", err.response?.data || err.message);
@@ -75,125 +58,75 @@ function Dashboard() {
   };
 
   // ✅ Withdraw
-  const handleTransaction = async () => {
-    if (!transactionAmount || isNaN(transactionAmount)) return alert("Enter valid amount");
+  const handleWithdraw = async () => {
+    if (!withdrawAmount || isNaN(withdrawAmount))
+      return alert("Enter a valid amount");
     try {
       const res = await axios.post(
         "http://localhost:5000/api/transactions/withdraw",
-        { userId: user._id, amount: Number(transactionAmount) },
+        { userId: user._id, amount: Number(withdrawAmount) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       alert(res.data.msg);
-      fetchUser();
-      fetchTransactions(user._id);
-      setTransactionAmount("");
+      setUser({ ...user, balance: res.data.balance });
+      setTransactions([res.data.transaction, ...transactions]);
+      setWithdrawAmount("");
     } catch (err) {
-      console.error("TRANSACTION ERROR:", err.response?.data || err.message);
+      console.error("WITHDRAW ERROR:", err.response?.data || err.message);
     }
   };
 
-  // ✅ Update user
-  const handleSaveUser = async () => {
-    try {
-      const res = await axios.put(
-        "http://localhost:5000/api/user",
-        editedUser,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setUser(res.data);
-      setEditMode(false);
-    } catch (err) {
-      console.error("UPDATE USER ERROR:", err);
-    }
-  };
-
-  // ✅ Sign out
-  const handleSignOut = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
-  };
+  if (!user) return <p>Loading...</p>;
 
   return (
     <div className="dashboard">
-      <h2>Dashboard</h2>
-      <button className="signout-btn" onClick={handleSignOut}>
-        Sign Out
-      </button>
+      <h2>Welcome, {user.name || user.username}</h2>
 
-      {user ? (
-        <>
-          <div className="card">
-            {!editMode ? (
-              <>
-                <h3>Welcome, {user.name}</h3>
-                <p>Email: {user.email}</p>
-                <p>Balance: ${user.balance}</p>
-                <button onClick={() => {
-                  setEditedUser({ name: user.name, email: user.email });
-                  setEditMode(true);
-                }}>
-                  Edit Profile
-                </button>
-              </>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  value={editedUser.name}
-                  onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
-                />
-                <input
-                  type="email"
-                  value={editedUser.email}
-                  onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
-                />
-                <button onClick={handleSaveUser}>Save</button>
-                <button onClick={() => setEditMode(false)}>Cancel</button>
-              </>
-            )}
-          </div>
-
-          <div className="card">
-            <h3>Deposit Money</h3>
-            <input
-              type="number"
-              value={depositAmount}
-              onChange={(e) => setDepositAmount(e.target.value)}
-              placeholder="Enter amount"
-            />
-            <button onClick={handleDeposit}>Deposit</button>
-          </div>
-
-          <div className="card">
-            <h3>Make Transaction</h3>
-            <input
-              type="number"
-              value={transactionAmount}
-              onChange={(e) => setTransactionAmount(e.target.value)}
-              placeholder="Enter amount"
-            />
-            <button onClick={handleTransaction}>Withdraw</button>
-          </div>
-        </>
-      ) : (
-        <p>Loading user...</p>
-      )}
-
-      <div className="transactions">
-        <h3>Transactions</h3>
-        {transactions.length > 0 ? (
-          <ul>
-            {transactions.map((t) => (
-              <li key={t._id}>
-                <span>{t.type.toUpperCase()} - ${t.amount}</span>
-                <span>{new Date(t.date).toLocaleDateString()}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No transactions found</p>
-        )}
+      {/* ✅ Customer Info Section */}
+      <div className="customer-info">
+        <p><strong>Customer ID:</strong> {user.customerId}</p>
+        <p><strong>Account No:</strong> {user.accountNumber}</p>
+        <p><strong>Account Type:</strong> {user.accountType}</p>
+        <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Phone:</strong> {user.phone}</p>
+        <p><strong>Age:</strong> {user.age}</p>
+        {user.dob && <p><strong>DOB:</strong> {new Date(user.dob).toLocaleDateString()}</p>}
+        <h3>Balance: ${user.balance}</h3>
       </div>
+
+      {/* ✅ Deposit & Withdraw Section */}
+      <div className="actions">
+        <div>
+          <input
+            type="number"
+            placeholder="Deposit Amount"
+            value={depositAmount}
+            onChange={(e) => setDepositAmount(e.target.value)}
+          />
+          <button onClick={handleDeposit}>Deposit</button>
+        </div>
+
+        <div>
+          <input
+            type="number"
+            placeholder="Withdraw Amount"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(e.target.value)}
+          />
+          <button onClick={handleWithdraw}>Withdraw</button>
+        </div>
+      </div>
+
+      {/* ✅ Transaction History */}
+      <h3>Transaction History</h3>
+      <ul>
+        {transactions.map((txn) => (
+          <li key={txn._id}>
+            {txn.type}: ${txn.amount} — {new Date(txn.date).toLocaleString()}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

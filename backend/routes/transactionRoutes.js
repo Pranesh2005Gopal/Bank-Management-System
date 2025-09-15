@@ -1,25 +1,3 @@
-/*const express = require("express");
-const Transaction = require("../models/Transaction");
-const { protect } = require("../middleware/authMiddleware");
-
-const router = express.Router();
-
-// Get transactions (customer sees their own, admin/employee sees all)
-router.get("/", protect, async (req, res) => {
-  try {
-    let transactions;
-    if (req.user.role === "customer") {
-      transactions = await Transaction.find({ userId: req.user._id });
-    } else {
-      transactions = await Transaction.find().populate("userId", "name email");
-    }
-    res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-module.exports = router;*/
 
 // routes/transactionRoutes.js
 import express from "express";
@@ -49,6 +27,15 @@ router.post("/deposit", async (req, res) => {
       return res.status(400).json({ msg: "User ID and amount required" });
     }
 
+    // Update user balance and get the updated user back
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $inc: { balance: amount } },
+      { new: true } // ✅ return updated user
+    );
+
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
     // Create transaction
     const transaction = new Transaction({
       user: userId,
@@ -57,10 +44,11 @@ router.post("/deposit", async (req, res) => {
     });
     await transaction.save();
 
-    // Update user balance
-    await User.findByIdAndUpdate(userId, { $inc: { balance: amount } });
-
-    res.json({ msg: "Deposit successful", transaction });
+    res.json({
+      msg: "Deposit successful",
+      balance: user.balance, // ✅ send updated balance
+      transaction,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
@@ -83,6 +71,10 @@ router.post("/withdraw", async (req, res) => {
       return res.status(400).json({ msg: "Insufficient balance" });
     }
 
+    // Deduct balance and save
+    user.balance -= amount;
+    await user.save();
+
     // Create transaction
     const transaction = new Transaction({
       user: userId,
@@ -91,10 +83,11 @@ router.post("/withdraw", async (req, res) => {
     });
     await transaction.save();
 
-    // Deduct balance
-    await User.findByIdAndUpdate(userId, { $inc: { balance: -amount } });
-
-    res.json({ msg: "Withdrawal successful", transaction });
+    res.json({
+      msg: "Withdrawal successful",
+      balance: user.balance, // ✅ send updated balance
+      transaction,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).send("Server error");
@@ -102,4 +95,5 @@ router.post("/withdraw", async (req, res) => {
 });
 
 export default router;
+
 

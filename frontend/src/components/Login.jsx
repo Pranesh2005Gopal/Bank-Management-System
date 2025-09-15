@@ -10,12 +10,25 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    if (!email || !password) return alert("Enter email and password");
+
+    const payload = { email, password };
+    console.log("Login Payload:", payload); // debug
+
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/login", { email, password });
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        payload,
+        { headers: { "Content-Type": "application/json" } } // optional
+      );
+
       localStorage.setItem("token", res.data.token);
+      console.log("Login success:", res.data);
       navigate("/dashboard");
     } catch (err) {
-      alert("Login failed!");
+      console.error("Login failed:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Login failed");
     }
   };
 
@@ -23,13 +36,30 @@ function Login() {
     <div className="auth-container">
       <h2>Login</h2>
       <form className="auth-form" onSubmit={handleLogin}>
-        <input type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={(e)=>setPassword(e.target.value)} required />
-        <button className="auth-btn" type="submit">Login</button>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        <button className="auth-btn" type="submit">
+          Login
+        </button>
       </form>
-      <p className="auth-link">Don’t have an account? <a href="/register">Register</a></p>
+      <p className="auth-link">
+        Don’t have an account? <a href="/register">Register</a>
+      </p>
     </div>
   );
 }
 
 export default Login;
+
