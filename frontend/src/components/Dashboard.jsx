@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Dashboard.css";
 
@@ -8,6 +9,7 @@ function Dashboard() {
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -77,11 +79,22 @@ function Dashboard() {
     }
   };
 
+  // ✅ Signout
+  const handleSignout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   if (!user) return <p>Loading...</p>;
 
   return (
     <div className="dashboard">
-      <h2>Welcome, {user.name || user.username}</h2>
+      <div className="dashboard-header">
+        <h2>Welcome, {user.name || user.username}</h2>
+        <button className="signout-btn" onClick={handleSignout}>
+          Sign Out
+        </button>
+      </div>
 
       {/* ✅ Customer Info Section */}
       <div className="customer-info">
