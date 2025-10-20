@@ -2,7 +2,7 @@
 .dashboard {
   min-height: 100vh;
   padding: 40px;
-  background: linear-gradient(135deg, #00c6ff, #0072ff);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 40%, #43e97b 100%);
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #222;
   display: flex;
@@ -17,6 +17,16 @@
   font-size: 2rem;
   margin-bottom: 30px;
   font-weight: 700;
+}
+
+/* Header row with title and actions */
+.dashboard-header {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
 }
 
 /* Sign Out Button */
@@ -36,6 +46,60 @@
 .signout-btn:hover {
   background: #cc0000;
   transform: scale(1.05);
+}
+
+/* Force fixed signout when needed */
+.signout-fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+/* Admin users table */
+.users-table {
+  width: 100%;
+  max-width: 1000px;
+  border-collapse: collapse;
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.users-table thead {
+  background: #0072ff;
+  color: #ffffff;
+}
+
+.users-table th,
+.users-table td {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.users-table tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.users-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.users-table tbody tr:hover {
+  background: #eef6ff;
+}
+
+.users-table a,
+.btn-link {
+  color: #0072ff;
+  text-decoration: none;
+  font-weight: 600;
+}
+.users-table a:hover,
+.btn-link:hover {
+  text-decoration: underline;
 }
 
 /* Customer Info Section */
@@ -185,5 +249,35 @@ li.withdraw .txn-type {
 .txn-date {
   font-size: 0.85rem;
   color: #666;
+}
+
+/* Danger button for destructive actions */
+.btn-danger {
+  background: #e53935;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.3s, transform 0.2s;
+}
+.btn-danger:hover {
+  background: #b71c1c;
+  transform: translateY(-1px);
+}
+
+/* Secondary button (e.g., back) */
+.btn-secondary {
+  background: #ffffff;
+  color: #0072ff;
+  border: 2px solid #0072ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: #eef6ff;
 }
 
