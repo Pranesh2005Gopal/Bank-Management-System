@@ -60,6 +60,49 @@ router.get("/transactions", protect, async (req, res) => {
   }
 });
 
+/**
+ * ✅ Set minimum balance for logged-in user
+ * PUT /api/user/set-minimum-balance
+ */
+router.put("/set-minimum-balance", protect, async (req, res) => {
+  try {
+    const { minimumBalance } = req.body;
+
+    if (minimumBalance === undefined || minimumBalance === null) {
+      return res.status(400).json({ message: "Minimum balance is required" });
+    }
+
+    if (minimumBalance < 0) {
+      return res.status(400).json({ message: "Minimum balance cannot be negative" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if current balance is already below the new minimum
+    if (user.balance < minimumBalance) {
+      return res.status(400).json({ 
+        message: `Cannot set minimum balance to $${minimumBalance} as your current balance ($${user.balance}) is below this threshold. Please deposit money first or set a lower minimum balance.`,
+        currentBalance: user.balance,
+        attemptedMinimumBalance: minimumBalance
+      });
+    }
+
+    user.minimumBalance = minimumBalance;
+    await user.save();
+
+    res.json({
+      message: "Minimum balance updated successfully",
+      minimumBalance: user.minimumBalance,
+      currentBalance: user.balance
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 export default router;
 
 

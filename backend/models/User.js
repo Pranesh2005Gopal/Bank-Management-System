@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema(
     accountNumber: { type: String, unique: true },
     accountType: { type: String, enum: ["Savings", "Current", "Fixed"] },
     balance: { type: Number, default: 0 },
+    minimumBalance: { type: Number, default: 0 }, // Minimum balance threshold
   },
   { timestamps: true }
 );
